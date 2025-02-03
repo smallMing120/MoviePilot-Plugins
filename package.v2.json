@@ -3,11 +3,12 @@
         "name": "订阅搜索结果查询",
         "description": "测试订阅搜索结果",
         "labels": "订阅",
-        "version": "1.2.1",
+        "version": "1.2.2",
         "icon": "Calibreweb_A.png",
         "author": "SmallMing",
         "level": 2,
         "history": {
+            "v1.2.2":"优化查询结果页面",
             "v1.2.1":"优化细节，可将调试好的结果更新到订阅",
             "v1.1": "初版完成"
         }

@@ -12,7 +12,8 @@ from app.db.models.subscribe import Subscribe
 from app.helper.subscribe import SubscribeHelper
 from app.chain.subscribe import SubscribeChain
 from app.db.subscribe_oper import SubscribeOper
-
+from app.utils.string import StringUtils
+import json
 
 class SubscriptionQuery(_PluginBase):
     # 插件名称
@@ -22,7 +23,7 @@ class SubscriptionQuery(_PluginBase):
     # 插件图标
     plugin_icon = "Calibreweb_A.png"
     # 插件版本
-    plugin_version = "1.2.1"
+    plugin_version = "1.2.2"
     # 插件作者
     plugin_author = "SmallMing"
     # 作者主页
@@ -166,7 +167,6 @@ class SubscriptionQuery(_PluginBase):
                 }
             )
 
-
     def get_state(self) -> bool:
         return True
 
@@ -213,7 +213,7 @@ class SubscriptionQuery(_PluginBase):
         subscribe_options = [
             {
                 'title': f"{subscribe.name} S{int(subscribe.season):02d}",
-                'value': subscribe.id
+                'value': subscribe.id,
             }
             for subscribe in self.subscribeoper.list()
             if isinstance(subscribe.season, (int, float, str)) and str(subscribe.season).isdigit()
@@ -240,6 +240,7 @@ class SubscriptionQuery(_PluginBase):
                                         'props': {
                                             'model': 'subscribe_id',
                                             'label': '订阅',
+                                            'class': "subscribe_id",
                                             'items': subscribe_options
                                         }
                                     }
@@ -614,7 +615,7 @@ class SubscriptionQuery(_PluginBase):
                                 ]
                             }
                         ]
-                    }
+                    },
                 ]
             }
         ], {
@@ -642,6 +643,7 @@ class SubscriptionQuery(_PluginBase):
         """
         # 查询详情
         histories = self.get_data('history')
+        subscribe_search = self.get_data('subscribe_search')
         if not histories:
             return [
                 {
@@ -653,6 +655,8 @@ class SubscriptionQuery(_PluginBase):
                 }
             ]
         contents = []
+
+
         for history in histories:
             site_icon = history.get('site_icon')
             title = history.get('title')
@@ -661,74 +665,377 @@ class SubscriptionQuery(_PluginBase):
             labels = history.get('labels')
             seeders = '↑' + str(history.get('seeders'))
             peers = '↓' + str(history.get('peers'))
-            
-            contents.append(
-                {
-                    'component': 'VListItem',
-                    "props":{
-                        "variant":"outlined"
-                    },
-                    'content': [
-                        {
-                            'component':"VListItemTitle",
-                            "props":{
-                                'class':"break-words overflow-visible whitespace-break-spaces"
-                            },
-                            "content": [
-                                {
-                                    'component': "VAvatar",
-                                    "props": {
-                                        'class': "rounded",
-                                        'variant': "flat"
-                                    },
-                                    "content": [
-                                        {
-                                            'component': "VImg",
-                                            "props": {
-                                                "src": site_icon
-                                            }
-                                        }
-                                    ]
-                                },{
-                                    'component': "text",
-                                    "text":title
-                                },
-                                {
-                                    'component': "span",
-                                    "props": {
-                                        "class": "text-green-700 ms-2 text-sm"
-                                    },
-                                    'text': seeders
-                                },
-                                {
-                                    'component': "span",
-                                    "props": {
-                                        "class": "text-orange-700 ms-2 text-sm"
-                                    },
-                                    'text': peers
-                                }
-                            ]
-                        },
-                        {
-                            'component':'VListItemSubtitle',
-                            'text':'['+site_name+'] ' + description
-                        },
-                        {
-                            'component':'div',
-                            "props": {
-                                'class': "pt-2"
-                            },
-                            'content':[{'component':'VChip',"props":{"variant":"elevated","size":"small","color":"primary","class":"me-1 mb-1"},'text':label} for label in labels]
-                        }
-                    ]
-                }
-            )
+            date_elapsed = history.get('date_elapsed')
+            size = StringUtils.str_filesize(history.get("size"))
+            pubdate = history.get('pubdate')
+            page_url = history.get('page_url')
+            hit_and_run = history.get('hit_and_run'),
+            freedate_diff = history.get('freedate_diff')
 
+            # contents.append(
+            #     {
+            #         'component': 'VListItem',
+            #         "props":{
+            #             "variant":"outlined"
+            #         },
+            #         'content': [
+            #             {
+            #                 'component':"VListItemTitle",
+            #                 "props":{
+            #                     'class':"break-words overflow-visible whitespace-break-spaces"
+            #                 },
+            #                 "content": [
+            #                     {
+            #                         'component': "VAvatar",
+            #                         "props": {
+            #                             'class': "rounded",
+            #                             'variant': "flat"
+            #                         },
+            #                         "content": [
+            #                             {
+            #                                 'component': "VImg",
+            #                                 "props": {
+            #                                     "src": site_icon
+            #                                 }
+            #                             }
+            #                         ]
+            #                     },{
+            #                         'component': "text",
+            #                         "text":title
+            #                     },
+            #                     {
+            #                         'component': "span",
+            #                         "props": {
+            #                             "class": "text-green-700 ms-2 text-sm"
+            #                         },
+            #                         'text': seeders
+            #                     },
+            #                     {
+            #                         'component': "span",
+            #                         "props": {
+            #                             "class": "text-orange-700 ms-2 text-sm"
+            #                         },
+            #                         'text': peers
+            #                     }
+            #                 ]
+            #             },
+            #             {
+            #                 'component':'VListItemSubtitle',
+            #                 'text':'['+site_name+'] ' + description
+            #             },
+            #             {
+            #                 'component':'div',
+            #                 "props": {
+            #                     'class': "pt-2"
+            #                 },
+            #                 'content':[{'component':'VChip',"props":{"variant":"elevated","size":"small","color":"primary","class":"me-1 mb-1"},'text':label} for label in labels]
+            #             }
+            #         ]
+            #     }
+            # )
+
+            title_html = [
+                {
+                    'component': 'div',
+                    'props': {
+                        'class': 'text-high-emphasis pt-1'
+                    },
+                    'text': title
+                },
+                {
+                    'component': 'div',
+                    'props': {
+                        'class': 'text-sm my-1'
+                    },
+                    'text': description
+                }
+            ]
+            if(hit_and_run):
+                title_html.append({
+                    'component': 'VChip',
+                    'props': {
+                        'variant': 'elevated',
+                        'size': 'small',
+                        'class': 'me-1 mb-1 text-white bg-black'
+                    },
+                    'text': 'H&R'
+                })
+            if freedate_diff:
+                title_html.append({
+                    'component': 'VChip',
+                    'props': {
+                        'variant': 'elevated',
+                        'color': 'secondary',
+                        'size': 'small',
+                        'class': 'me-1 mb-1'
+                    },
+                    'text': freedate_diff
+                })
+            if labels:
+                for label in labels:
+                    title_html.append({
+                        'component': 'VChip',
+                        'props': {
+                            'variant': 'elevated',
+                            'color': 'primary',
+                            'size': 'small',
+                            'class': 'me-1 mb-1'
+                        },
+                        'text': label
+                    })
+
+            contents.append({
+                'component': 'tr',
+                'props': {
+                    'class': 'text-sm'
+                },
+                'content': [
+                    {
+                        'component': 'td',
+                        'props': {
+                            'class': 'whitespace-nowrap break-keep text-high-emphasis'
+                        },
+                        #'text': site_name,
+                        'content':[
+                            {
+                                'component': "VAvatar",
+                                "props": {
+                                    'class': "rounded",
+                                    'variant': "flat"
+                                },
+                                "content": [
+                                    {
+                                        'component': "VImg",
+                                        "props": {
+                                            "src": site_icon
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': "br",
+                            },
+                            {
+                                'component': "span",
+                                "props":{
+                                    'size': 'small',
+                                    'variant': 'elevated',
+                                    'class': 'me-1 mb-1',
+                                    'color': 'warning',
+                                },
+                                'text': site_name,
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [{
+                            'component': 'a',
+                            'props': {
+                                'href': 'javascript:void(0)',
+                                'torrent-data': '',
+                                'class': 'torrent-title-link'
+                            },
+                            'content': title_html
+                        }]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [
+                            {
+                                'component': 'div',
+                                'text': date_elapsed
+                            },
+                            {
+                                'component': 'div',
+                                'props': {
+                                    'class': 'text-sm'
+                                },
+                                'text': pubdate
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [
+                            {
+                                'component': 'div',
+                                'props': {
+                                    'class': 'text-nowrap whitespace-nowrap'
+                                },
+                                'text': size
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [
+                            {
+                                'component': 'div',
+                                'text':seeders
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [
+                            {
+                                'component': 'div',
+                                'text': peers
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'td',
+                        'content': [
+                            {
+                                'component': 'div',
+                                'content': [
+                                    {
+                                        'component': 'VChip',
+                                        'props': {
+                                            'variant': 'elevated',
+                                            'size': 'default',
+                                            'class': 'me-1 mb-1 text-white bg-sky-500'
+                                        },
+                                        'content': [
+                                            {
+                                                'component': 'a',
+                                                'props': {
+                                                    'href': page_url,
+                                                    'target': '_blank'
+                                                },
+                                                'text': '查看详情'
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            })
 
         return [
             {
-                'component': 'div',
-                'content': contents
+                'component': 'VRow',
+                'content': [
+                    {
+                        'component': 'VRow',
+                        'content': [
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VAlert',
+                                        'props': {
+                                            'type': 'info',
+                                            'variant': 'tonal',
+                                            'text': f'查询订阅：{subscribe_search}'
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    # 各站点数据明细
+                    {
+                        'component': 'VCardText',
+                        'props': {
+                            'class': 'pt-2',
+                        },
+                        'content': [
+                            {
+                                'component': 'VTable',
+                                'props': {
+                                    'hover': True,
+                                    'fixed-header': True,
+                                    'height': '500px'
+                                },
+                                'content': [
+                                    {
+                                        'component': 'thead',
+                                        'content': [
+                                            {
+                                                'component': 'tr',
+                                                'content': [
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '站点'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '标题'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '时间'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '大小'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '做种'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': '下载'
+                                                    },
+                                                    {
+                                                        'component': 'th',
+                                                        'props': {
+                                                            'class': 'text-start'
+                                                        },
+                                                        'text': ''
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        'component': 'tbody',
+                                        'content': contents
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    # 自定义样式
+                    {
+                        'component': 'style',
+                        'props': {
+                            'type': 'text/css'
+                        },
+                        'text': """
+                                    div.v-toast.v-toast--bottom {
+                                        z-index: 3000;
+                                    }
+                                """
+                    }
+                ]
             }
         ]
 
@@ -756,7 +1063,9 @@ class SubscriptionQuery(_PluginBase):
         subscribe.search_imdbid = self._search_imdbid
         subscribe.best_version = self._best_version
 
-        if subscribe.type == 'tv' or subscribe.type == 'TV' or subscribe.type == '电视剧' :
+        self.save_data('subscribe_search',f"{subscribe.name} S{int(subscribe.season):02d}")
+
+        if (subscribe.type == 'tv' or subscribe.type == 'TV' or subscribe.type == '电视剧') and not self._start_episode :
             subscribe.start_episode = self._start_episode
 
         matched_contexts = []
@@ -817,6 +1126,10 @@ class SubscriptionQuery(_PluginBase):
                     'size': context.torrent_info.size,# 种子大小
                     'seeders': context.torrent_info.seeders,#做种者,
                     'peers': context.torrent_info.peers,#完成者
+                    'date_elapsed':context.torrent_info.date_elapsed,
+                    'page_url':context.torrent_info.page_url,
+                    'hit_and_run':context.torrent_info.hit_and_run,
+                    'freedate_diff':context.torrent_info.freedate_diff
                 })
                 i+=1
             if not matched_contexts:
