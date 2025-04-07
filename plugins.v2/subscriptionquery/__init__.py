@@ -23,7 +23,7 @@ class SubscriptionQuery(_PluginBase):
     # 插件图标
     plugin_icon = "Calibreweb_A.png"
     # 插件版本
-    plugin_version = "1.2.2"
+    plugin_version = "1.2.3"
     # 插件作者
     plugin_author = "SmallMing"
     # 作者主页
@@ -64,6 +64,8 @@ class SubscriptionQuery(_PluginBase):
     _update:bool = False
 
     def init_plugin(self, config: dict = None):
+        # 停止现有任务
+        self.stop_service()
         #站点
         self.sites = SitesHelper()
         self.siteoper = SiteOper()
@@ -222,6 +224,7 @@ class SubscriptionQuery(_PluginBase):
         rule_groups = ([{"title":group.get('name'),"value":group.get('name')} for group in self.systemconfigoper.get('UserFilterRuleGroups') ])
 
         return [
+
             {
                 'component': 'VForm',
                 'content': [
@@ -643,6 +646,8 @@ class SubscriptionQuery(_PluginBase):
         """
         # 查询详情
         histories = self.get_data('history')
+        # 数据按时间降序排序
+        histories = sorted(histories, key=lambda x: x.get('pubdate'), reverse=True)
         subscribe_search = self.get_data('subscribe_search')
         if not histories:
             return [
@@ -655,7 +660,6 @@ class SubscriptionQuery(_PluginBase):
                 }
             ]
         contents = []
-
 
         for history in histories:
             site_icon = history.get('site_icon')
@@ -750,16 +754,16 @@ class SubscriptionQuery(_PluginBase):
                     'text': description
                 }
             ]
-            if(hit_and_run):
-                title_html.append({
-                    'component': 'VChip',
-                    'props': {
-                        'variant': 'elevated',
-                        'size': 'small',
-                        'class': 'me-1 mb-1 text-white bg-black'
-                    },
-                    'text': 'H&R'
-                })
+            # if(hit_and_run):
+            #     title_html.append({
+            #         'component': 'VChip',
+            #         'props': {
+            #             'variant': 'elevated',
+            #             'size': 'small',
+            #             'class': 'me-1 mb-1 text-white bg-black'
+            #         },
+            #         'text': 'H&R'
+            #     })
             if freedate_diff:
                 title_html.append({
                     'component': 'VChip',
@@ -1129,7 +1133,7 @@ class SubscriptionQuery(_PluginBase):
                     'date_elapsed':context.torrent_info.date_elapsed,
                     'page_url':context.torrent_info.page_url,
                     'hit_and_run':context.torrent_info.hit_and_run,
-                    'freedate_diff':context.torrent_info.freedate_diff
+                    'freedate_diff':context.torrent_info.freedate_diff,
                 })
                 i+=1
             if not matched_contexts:
