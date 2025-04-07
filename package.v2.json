@@ -1,5 +1,5 @@
 {
-    "SubscriptionQuery": {
+    "Subscriptionquery": {
         "name": "订阅搜索结果查询",
         "description": "测试订阅搜索结果",
         "labels": "订阅",
