@@ -1,11 +1,11 @@
 {
-    "SubscriptionQuery": {
-        "name": "订阅搜索结果查询",
-        "description": "测试订阅搜索结果",
-        "labels": "订阅",
-        "version": "1.2.3",
-        "icon": "Calibreweb_A.png",
-        "author": "SmallMing",
-        "level": 2
-    }
+  "SubscriptionQuery": {
+      "name": "订阅结果查询",
+      "description": "subscriptionquery",
+      "labels": "订阅",
+      "version": "1.2.3",
+      "icon": "Calibreweb_A.png",
+      "author": "SmallMing",
+      "level": 2
+  }
 }
