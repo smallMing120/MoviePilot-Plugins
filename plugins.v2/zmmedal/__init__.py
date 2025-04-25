@@ -1,6 +1,4 @@
-import re
 import requests
-import time
 from datetime import datetime
 from typing import Any, List, Dict, Tuple, Optional
 
@@ -9,7 +7,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 from app.plugins import _PluginBase
 from app.log import logger
-from app.scheduler import Scheduler
+from app.db.site_oper import SiteOper
 from app.schemas import NotificationType
 from app.utils.http import RequestUtils
 
@@ -21,7 +19,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.2"
+    plugin_version = "1.0.3"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -37,23 +35,23 @@ class ZmMedal(_PluginBase):
     _enabled: bool = False
     # 任务执行间隔
     _cron: Optional[str] = None
-    _cookie: Optional[str] = None
     _onlyonce: bool = False
     _notify: bool = False
 
     # 定时器
     _scheduler: Optional[BackgroundScheduler] = None
+    _siteoper = None
 
     def init_plugin(self, config: Optional[dict] = None) -> None:
         """
-                初始化插件
-                """
+            初始化插件
+        """
         # 停止现有任务
         self.stop_service()
+        self._siteoper =  SiteOper()
         if config:
             self._enabled = config.get("enabled", False)
             self._cron = config.get("cron")
-            self._cookie = config.get("cookie")
             self._notify = config.get("notify", False)
             self._onlyonce = config.get("onlyonce", False)
 
@@ -66,7 +64,6 @@ class ZmMedal(_PluginBase):
                     "onlyonce": False,
                     "cron": self._cron,
                     "enabled": self._enabled,
-                    "cookie": self._cookie,
                     "notify": self._notify,
                 })
                 # 启动任务
@@ -220,65 +217,6 @@ class ZmMedal(_PluginBase):
                                             'style': 'color: #1976D2;',
                                             'class': 'mr-2'
                                         },
-                                        'text': 'mdi-cog-sync'
-                                    },
-                                    {
-                                        'component': 'span',
-                                        'text': 'cookie设置'
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VDivider'
-                            },
-                            {
-                                'component': 'VCardText',
-                                'content': [
-                                    {
-                                        'component': 'VRow',
-                                        'content': [
-                                            {
-                                                'component': 'VCol',
-                                                'props': {
-                                                    'cols': 12,
-                                                    'md': 12
-                                                },
-                                                'content': [
-                                                    {
-                                                        'component': 'VTextField',
-                                                        'props': {
-                                                            'model': 'cookie',
-                                                            'label': '站点cookie',
-                                                            'hint': '用于登录站点的cookie信息'
-                                                        }
-                                                    }
-                                                ]
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    {
-                        'component': 'VCard',
-                        'props': {
-                            'variant': 'outlined',
-                            'class': 'mt-3'
-                        },
-                        'content': [
-                            {
-                                'component': 'VCardTitle',
-                                'props': {
-                                    'class': 'd-flex align-center'
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VIcon',
-                                        'props': {
-                                            'style': 'color: #1976D2;',
-                                            'class': 'mr-2'
-                                        },
                                         'text': 'mdi-clock-outline'
                                     },
                                     {
@@ -325,7 +263,6 @@ class ZmMedal(_PluginBase):
             "enabled": False,
             "onlyonce": False,
             "notify": False,
-            "cookie": "",
             "cron": "0 9 * * *",
         }
 
@@ -350,7 +287,12 @@ class ZmMedal(_PluginBase):
         try:
             unhasMedal = []
 
-            res = RequestUtils(cookies=self._cookie).get_res(url="https://zmpt.cc/javaapi/user/queryAllMedals")
+            site = self._siteoper.get_by_domain('zmpt.cc')
+            if not site :
+                logger.info(f"未添加织梦站点！")
+                return
+
+            res = RequestUtils(cookies=site.cookie).get_res(url="https://zmpt.cc/javaapi/user/queryAllMedals")
             if not res or res.status_code != 200:
                 logger.error("请求勋章接口失败！状态码：%s", res.status_code if res else "无响应")
                 return
