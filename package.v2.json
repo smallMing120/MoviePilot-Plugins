@@ -1,7 +1,7 @@
 {
   "SubscriptionQuery": {
       "name": "订阅结果查询",
-      "description": "subscriptionquery",
+      "description": "",
       "labels": "订阅",
       "version": "1.2.3",
       "icon": "Calibreweb_A.png",
@@ -10,7 +10,7 @@
   },
   "ZmMedal":{
     "name": "织梦勋章购买提醒",
-    "description": "ZmMedal",
+    "description": "",
     "labels": "",
     "version": "1.0.2",
     "icon": "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png",
