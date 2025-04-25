@@ -440,7 +440,7 @@ class ZmMedal(_PluginBase):
         try:
             report = ""
             report += f"《{medal.get('name')}》可购买！\n 购买时间：{medal.get('saleBeginTime')} - {medal.get('saleEndTime')}\n"
-            report += f" 所需积分: {medal.get('price'):,} \n"
+            report += f" 所需积分: {medal.get('price'):,} \n ---------- \n"
             return report
         except Exception as e:
             logger.error(f"生成报告时发生异常: {e}")
