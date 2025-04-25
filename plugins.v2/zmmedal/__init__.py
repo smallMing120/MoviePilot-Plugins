@@ -21,7 +21,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.1"
+    plugin_version = "1.0.2"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -96,7 +96,7 @@ class ZmMedal(_PluginBase):
                     "id": "ZmMedal",
                     "name": "织梦勋章购买提醒",
                     "trigger": CronTrigger.from_crontab(self._cron),
-                    "func": self.__start(),
+                    "func": self.__start,
                     "kwargs": {}
                 }
             ]
