@@ -387,28 +387,29 @@ class ZmMedal(_PluginBase):
                 medalList = medalGroup.get('medalList')
                 for medal in medalList:
                     hasMedal = medal.get('hasMedal')
+                    imageSmall = medal.get('imageSmall')
                     price = medal.get('price')
                     name = medal.get('name')
-                    imageSmall = medal.get('imageSmall')
-                    logger.info(f"开始检查：{name}勋章....")
+                    logger.info(f"开始检查：《{name}》勋章....")
                     if hasMedal:
-                        # 已拥有勋章跳过
-                        logger.info(f"{name}:已拥有,跳过...")
+                        #已拥有勋章跳过
+                        logger.info(f"《{name}》:已拥有,跳过")
                         continue
 
                     saleBeginTime = medal.get('saleBeginTime')
                     saleEndTime = medal.get('saleEndTime')
 
-                    if self.is_current_time_in_range(saleBeginTime, saleEndTime):
+                    if self.is_current_time_in_range(saleBeginTime,saleEndTime):
+                        logger.info(f"《{name}》:可购买！")
                         unhasMedal.append({
-                            'name': name,
-                            'imageSmall': imageSmall,
-                            'saleBeginTime': saleBeginTime,
-                            'saleEndTime': saleEndTime,
-                            'price': price
+                            'name':name,
+                            'imageSmall':imageSmall,
+                            'saleBeginTime':saleBeginTime,
+                            'saleEndTime':saleEndTime,
+                            'price':price
                         })
                     else:
-                        logger.info(f"{name}:未到开售时间...")
+                        logger.info(f"《{name}》:未到开售时间")
 
             if self._notify and unhasMedal:
                 # 发送通知
