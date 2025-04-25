@@ -19,7 +19,7 @@ class ZmMedal(_PluginBase):
     # 插件描述
     plugin_desc = "织梦勋章购买提醒"
     # 插件图标
-    plugin_icon = "https://raw.githubusercontent.com/KoWming/MoviePilot-Plugins/main/icons/zhuquehelper.png"
+    plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
     plugin_version = "1.0.0"
     # 插件作者
