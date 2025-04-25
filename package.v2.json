@@ -13,7 +13,7 @@
     "description": "ZmMedal",
     "labels": "",
     "version": "1.0.0",
-    "icon": "zm.png",
+    "icon": "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png",
     "author": "smallMing",
     "level": 2
   }
