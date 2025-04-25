@@ -21,7 +21,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.2"
+    plugin_version = "1.0.0"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -362,10 +362,10 @@ class ZmMedal(_PluginBase):
                 imageSmall = medal.get('imageSmall')
                 price = medal.get('price')
                 name = medal.get('name')
-                logger.info(f"开始检查：{name}勋章....")
+                logger.info(f"开始检查：《{name}》勋章....")
                 if hasMedal:
                     #已拥有勋章跳过
-                    logger.info(f"{name}:已拥有,跳过...")
+                    logger.info(f"《{name}》:已拥有,跳过")
                     continue
 
                 saleBeginTime = medal.get('saleBeginTime')
@@ -380,7 +380,7 @@ class ZmMedal(_PluginBase):
                         'price':price
                     })
                 else:
-                    logger.info(f"{name}:未到开售时间...")
+                    logger.info(f"《{name}》:未到开售时间")
 
             for medalGroup in medalGroups:
                 medalList = medalGroup.get('medalList')
@@ -439,7 +439,7 @@ class ZmMedal(_PluginBase):
         """生成报告"""
         try:
             report = ""
-            report += f"《{medal.get('name')}》可购买！\n 购买时间：{medal.get('saleBeginTime')} - {medal.get('saleEndTime')}\n"
+            report += f"《{medal.get('name')}》\n 购买时间：{medal.get('saleBeginTime')} - {medal.get('saleEndTime')}\n"
             report += f" 所需积分: {medal.get('price'):,} \n ---------- \n"
             return report
         except Exception as e:
