@@ -5,7 +5,16 @@
       "labels": "订阅",
       "version": "1.2.3",
       "icon": "Calibreweb_A.png",
-      "author": "SmallMing",
+      "author": "smallMing",
       "level": 2
+  },
+  "ZmMedal":{
+    "name": "织梦勋章购买提醒",
+    "description": "ZmMedal",
+    "labels": "",
+    "version": "1.0.0",
+    "icon": "zm.png",
+    "author": "smallMing",
+    "level": 2
   }
 }
