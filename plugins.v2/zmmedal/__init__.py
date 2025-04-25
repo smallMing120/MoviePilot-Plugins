@@ -21,7 +21,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.0"
+    plugin_version = "1.0.2"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -352,7 +352,7 @@ class ZmMedal(_PluginBase):
 
             res = RequestUtils(cookies=self._cookie).get_res(url="https://zmpt.cc/javaapi/user/queryAllMedals")
             if not res or res.status_code != 200:
-                logger.error("请求首页失败！状态码：%s", res.status_code if res else "无响应")
+                logger.error("请求勋章接口失败！状态码：%s", res.status_code if res else "无响应")
                 return
             data = res.json().get('result',{})
             medalGroups = data.get('medalGroups')
@@ -372,6 +372,7 @@ class ZmMedal(_PluginBase):
                 saleEndTime = medal.get('saleEndTime')
 
                 if self.is_current_time_in_range(saleBeginTime,saleEndTime):
+                    logger.info(f"《{name}》:可购买！")
                     unhasMedal.append({
                         'name':name,
                         'imageSmall':imageSmall,
@@ -439,8 +440,8 @@ class ZmMedal(_PluginBase):
         """生成报告"""
         try:
             report = ""
-            report += f"《{medal.get('name')}》\n 购买时间：{medal.get('saleBeginTime')} - {medal.get('saleEndTime')}\n"
-            report += f" 所需积分: {medal.get('price'):,} \n ---------- \n"
+            report += f"《{medal.get('name')}》可购买！\n 购买时间：{medal.get('saleBeginTime')} - {medal.get('saleEndTime')}\n"
+            report += f" 所需积分: {medal.get('price'):,} \n"
             return report
         except Exception as e:
             logger.error(f"生成报告时发生异常: {e}")
