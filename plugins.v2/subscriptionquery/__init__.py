@@ -23,9 +23,9 @@ class SubscriptionQuery(_PluginBase):
     # 插件图标
     plugin_icon = "Calibreweb_A.png"
     # 插件版本
-    plugin_version = "1.2.3"
+    plugin_version = "1.2.4"
     # 插件作者
-    plugin_author = "SmallMing"
+    plugin_author = "smallMing"
     # 作者主页
     author_url = "https://github.com/smallMing120/MoviePilot-Plugins/"
     # 插件配置项ID前缀
@@ -221,7 +221,10 @@ class SubscriptionQuery(_PluginBase):
             if isinstance(subscribe.season, (int, float, str)) and str(subscribe.season).isdigit()
         ]
         # 用户自定义规则组
-        rule_groups = ([{"title":group.get('name'),"value":group.get('name')} for group in self.systemconfigoper.get('UserFilterRuleGroups') ])
+        if self.systemconfigoper.get('UserFilterRuleGroups'):
+            rule_groups = ([{"title":group.get('name'),"value":group.get('name')} for group in self.systemconfigoper.get('UserFilterRuleGroups') ])
+        else:
+            rule_groups = []
 
         return [
 
@@ -646,9 +649,6 @@ class SubscriptionQuery(_PluginBase):
         """
         # 查询详情
         histories = self.get_data('history')
-        # 数据按时间降序排序
-        histories = sorted(histories, key=lambda x: x.get('pubdate'), reverse=True)
-        subscribe_search = self.get_data('subscribe_search')
         if not histories:
             return [
                 {
@@ -659,6 +659,9 @@ class SubscriptionQuery(_PluginBase):
                     }
                 }
             ]
+        # 数据按时间降序排序
+        histories = sorted(histories, key=lambda x: x.get('pubdate'), reverse=True)
+        subscribe_search = self.get_data('subscribe_search')
         contents = []
 
         for history in histories:

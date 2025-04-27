@@ -1,9 +1,9 @@
 {
   "SubscriptionQuery": {
       "name": "订阅结果查询",
-      "description": "",
+      "description": "订阅结果查询,用于调试订阅",
       "labels": "订阅",
-      "version": "1.2.3",
+      "version": "1.2.4",
       "icon": "Calibreweb_A.png",
       "author": "smallMing",
       "level": 2
