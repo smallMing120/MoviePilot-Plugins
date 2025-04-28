@@ -21,13 +21,13 @@ from app.utils.security import SecurityUtils
 
 class ZmMedal(_PluginBase):
     # 插件名称
-    plugin_name = "织梦勋章购买提醒"
+    plugin_name = "织梦勋章"
     # 插件描述
     plugin_desc = "织梦勋章购买提醒"
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.5"
+    plugin_version = "1.0.6"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -275,7 +275,151 @@ class ZmMedal(_PluginBase):
         }
 
     def get_page(self) -> List[dict]:
-        pass
+        medals = self.get_data('medals', 'zmmedal')
+        unhas_medals = self.get_data('unhas_medals', 'zmmedal')
+        has_medals = self.get_data('has_medals', 'zmmedal')
+        medal_html = {
+            'component': 'VRow',
+            'content': [
+                {
+                    'component': 'VCol',
+                    'props': {
+                        'cols': 12,
+                        'md': 12
+                    },
+                    'content': [
+                        {
+                            'component': 'VRow',
+                            'props': {
+                                'cols': 12,
+                            },
+                            'content': [
+                                {
+                                    'component': 'VAlert',
+                                    'props': {
+                                        'type': 'error',
+                                        'variant': 'tonal',
+                                        'text': '无可购买勋章'
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        if medals:
+            medal_html = {
+                'component': 'VRow',
+                'content': [
+                    {
+                        'component': 'VCol',
+                        'props': {
+                            'cols': 12,
+                            'md': 12
+                        },
+                        'content': [
+                            {
+                                'component': 'VRow',
+                                'props': {
+                                    'cols': 12,
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VAlert',
+                                        'props': {
+                                            'type': 'success',
+                                            'variant': 'tonal',
+                                            'text': '可购买勋章'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VRow',
+                                'content': self.__get_medal_elements(medals)
+                            }
+                        ]
+                    }
+                ]
+            }
+
+        # has_medal_html = {}
+        # if has_medals:
+        #     has_medal_html = {
+        #         'component': 'VRow',
+        #         'content': [
+        #             {
+        #                 'component': 'VCol',
+        #                 'props': {
+        #                     'cols': 12,
+        #                 },
+        #                 'content': [
+        #                     {
+        #                         'component': 'VRow',
+        #                         'props': {
+        #                             'cols': 12,
+        #                         },
+        #                         'content': [
+        #                             {
+        #                                 'component': 'VAlert',
+        #                                 'props': {
+        #                                     'type': 'info',
+        #                                     'variant': 'tonal',
+        #                                     'text': '已拥有勋章'
+        #                                 }
+        #                             }
+        #                         ]
+        #                     },
+        #                     {
+        #                         'component': 'VRow',
+        #                         'content': self.__get_medal_elements(has_medals)
+        #                     }
+        #                 ]
+        #             }
+        #         ]
+        #     }
+        #
+        # unhas_medal_html = {}
+        # if unhas_medals:
+        #     unhas_medal_html = {
+        #         'component': 'VRow',
+        #         'content': [
+        #             {
+        #                 'component': 'VCol',
+        #                 'props': {
+        #                     'cols': 12,
+        #                     'md': 12
+        #                 },
+        #                 'content': [
+        #                     {
+        #                         'component': 'VRow',
+        #                         'props': {
+        #                             'cols': 12,
+        #                         },
+        #                         'content': [
+        #                             {
+        #                                 'component': 'VAlert',
+        #                                 'props': {
+        #                                     'type': 'primary',
+        #                                     'variant': 'tonal',
+        #                                     'text': '未拥有勋章'
+        #                                 }
+        #                             }
+        #                         ]
+        #                     },
+        #                     {
+        #                         'component': 'VRow',
+        #                         'content': self.__get_medal_elements(unhas_medals)
+        #                     }
+        #                 ]
+        #             }
+        #         ]
+        #     }
+
+        return[
+            medal_html, #has_medal_html, unhas_medal_html
+        ]
 
     def stop_service(self) -> None:
         try:
@@ -293,7 +437,12 @@ class ZmMedal(_PluginBase):
         """
         logger.info("织梦勋章购买提醒，开始执行")
         try:
-            unhasMedal = []
+            #可购买勋章
+            buy_medal = []
+            #未拥有勋章
+            unhas_medal = []
+            #已拥有勋章
+            has_medal = []
 
             site = self._siteoper.get_by_domain('zmpt.cc')
             if not site :
@@ -312,18 +461,24 @@ class ZmMedal(_PluginBase):
                 imageSmall = medal.get('imageSmall')
                 price = medal.get('price')
                 name = medal.get('name')
-                logger.info(f"开始检查：《{name}》勋章....")
-                if hasMedal:
-                    #已拥有勋章跳过
-                    logger.info(f"《{name}》:已拥有,跳过")
-                    continue
-
                 saleBeginTime = medal.get('saleBeginTime')
                 saleEndTime = medal.get('saleEndTime')
-
-                if self.is_current_time_in_range(saleBeginTime,saleEndTime):
+                # 缓存收集到的圖片
+                self.__cache_img(imageSmall)
+                logger.info(f"开始检查：《{name}》勋章....")
+                if hasMedal:
+                    #已拥有勋章
+                    logger.info(f"《{name}》:已拥有,跳过")
+                    has_medal.append({
+                        'name': name,
+                        'imageSmall': imageSmall,
+                        'saleBeginTime': saleBeginTime,
+                        'saleEndTime': saleEndTime,
+                        'price': price
+                    })
+                elif self.is_current_time_in_range(saleBeginTime,saleEndTime):
                     logger.info(f"《{name}》:可购买！")
-                    unhasMedal.append({
+                    buy_medal.append({
                         'name':name,
                         'imageSmall':imageSmall,
                         'saleBeginTime':saleBeginTime,
@@ -332,6 +487,13 @@ class ZmMedal(_PluginBase):
                     })
                 else:
                     logger.info(f"《{name}》:未到开售时间")
+                    unhas_medal.append({
+                        'name': name,
+                        'imageSmall': imageSmall,
+                        'saleBeginTime': saleBeginTime,
+                        'saleEndTime': saleEndTime,
+                        'price': price
+                    })
 
             for medalGroup in medalGroups:
                 medalList = medalGroup.get('medalList')
@@ -340,22 +502,24 @@ class ZmMedal(_PluginBase):
                     imageSmall = medal.get('imageSmall')
                     price = medal.get('price')
                     name = medal.get('name')
-                    logger.info(f"开始检查：《{name}》勋章....")
-                    if hasMedal:
-                        #已拥有勋章跳过
-                        logger.info(f"《{name}》:已拥有,跳过")
-                        continue
-
                     saleBeginTime = medal.get('saleBeginTime')
                     saleEndTime = medal.get('saleEndTime')
-
-                    if self.is_current_time_in_range(saleBeginTime,saleEndTime):
+                    logger.info(f"开始检查：《{name}》勋章....")
+                    # 缓存收集到的圖片
+                    self.__cache_img(imageSmall)
+                    if hasMedal:
+                        #已拥有勋章
+                        logger.info(f"《{name}》:已拥有,跳过")
+                        has_medal.append({
+                            'name': name,
+                            'imageSmall': imageSmall,
+                            'saleBeginTime': saleBeginTime,
+                            'saleEndTime': saleEndTime,
+                            'price': price
+                        })
+                    elif self.is_current_time_in_range(saleBeginTime,saleEndTime):
                         logger.info(f"《{name}》:可购买！")
-
-                        # 缓存收集到的圖片
-                        self.__cache_img(imageSmall)
-
-                        unhasMedal.append({
+                        buy_medal.append({
                             'name':name,
                             'imageSmall':imageSmall,
                             'saleBeginTime':saleBeginTime,
@@ -364,21 +528,31 @@ class ZmMedal(_PluginBase):
                         })
                     else:
                         logger.info(f"《{name}》:未到开售时间")
+                        unhas_medal.append({
+                            'name': name,
+                            'imageSmall': imageSmall,
+                            'saleBeginTime': saleBeginTime,
+                            'saleEndTime': saleEndTime,
+                            'price': price
+                        })
 
-            if self._notify and unhasMedal:
+            if self._notify and buy_medal:
                 # 发送通知
                 text_message = "织梦勋章购买提醒 \n"
-                for medal in unhasMedal:
+                for medal in buy_medal:
                     text_message += self.generate_text_report(medal)
                 self.post_message(
                     mtype=NotificationType.SiteMessage,
                     title="【任务执行完成】",
                     text=f"{text_message}")
-            if unhasMedal:
-                self.save_data('medals',unhasMedal,'zmmedal')
+            if buy_medal:
+                self.save_data('medals',buy_medal,'zmmedal')
+            self.save_data('unhas_medals',unhas_medal,'zmmedal')
+            self.save_data('has_medals',has_medal,'zmmedal')
 
         except requests.exceptions.RequestException as e:
             logger.error(f"请求勋章页面时发生异常: {e}")
+
 
     def __cache_img(self,url):
         if not settings.GLOBAL_IMAGE_CACHE or not url:
@@ -452,6 +626,8 @@ class ZmMedal(_PluginBase):
 
     def get_dashboard(self, key: str, **kwargs) -> Optional[Tuple[Dict[str, Any], Dict[str, Any], List[dict]]]:
         medals = self.get_data('medals','zmmedal')
+        unhas_medals = self.get_data('unhas_medals','zmmedal')
+        has_medals = self.get_data('has_medals','zmmedal')
         if not medals:
             pass
         else:
@@ -462,128 +638,245 @@ class ZmMedal(_PluginBase):
             # 全局配置
             attrs = {}
 
-            elements = [
-                {
+            medal_html = {}
+            if medals:
+                medal_html = {
                     'component': 'VRow',
-                    'content': self.__get_medal_elements(medals)
+                    'content': [
+                        {
+                            'component': 'VCol',
+                            'props': {
+                                'cols': 12,
+                                'md': 12
+                            },
+                            'content': [
+                                {
+                                    'component': 'VRow',
+                                    'props': {
+                                        'cols': 12,
+                                    },
+                                    'content': [
+                                        {
+                                            'component': 'VAlert',
+                                            'props': {
+                                                'type': 'success',
+                                                'variant': 'tonal',
+                                                'text': '可购买勋章'
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    'component': 'VRow',
+                                    'content': self.__get_medal_elements(medals)
+                                }
+                            ]
+                        }
+                    ]
                 }
+
+            # has_medal_html = {}
+            # if has_medals:
+            #     has_medal_html = {
+            #         'component': 'VRow',
+            #         'content': [
+            #             {
+            #                 'component': 'VCol',
+            #                 'props': {
+            #                     'cols': 12,
+            #                 },
+            #                 'content': [
+            #                     {
+            #                         'component': 'VRow',
+            #                          'props': {
+            #                             'cols': 12,
+            #                          },
+            #                         'content': [
+            #                             {
+            #                                 'component': 'VAlert',
+            #                                 'props': {
+            #                                     'type': 'info',
+            #                                     'variant': 'tonal',
+            #                                     'text': '已拥有勋章'
+            #                                 }
+            #                             }
+            #                         ]
+            #                     },
+            #                     {
+            #                         'component': 'VRow',
+            #                         'content': self.__get_medal_elements(has_medals)
+            #                     }
+            #                 ]
+            #             }
+            #         ]
+            #     }
+            #
+            # unhas_medal_html = {}
+            # if unhas_medals:
+            #     unhas_medal_html = {
+            #         'component': 'VRow',
+            #         'content': [
+            #             {
+            #                 'component': 'VCol',
+            #                 'props': {
+            #                     'cols': 12,
+            #                     'md': 12
+            #                 },
+            #                 'content': [
+            #                     {
+            #                         'component': 'VRow',
+            #                         'props': {
+            #                             'cols': 12,
+            #                         },
+            #                         'content': [
+            #                             {
+            #                                 'component': 'VAlert',
+            #                                 'props': {
+            #                                     'type': 'primary',
+            #                                     'variant': 'tonal',
+            #                                     'text': '未拥有勋章'
+            #                                 }
+            #                             }
+            #                         ]
+            #                     },
+            #                     {
+            #                         'component': 'VRow',
+            #                         'content': self.__get_medal_elements(unhas_medals)
+            #                     }
+            #                 ]
+            #             }
+            #         ]
+            #     }
+
+            elements = [
+                medal_html
             ]
             return cols,attrs,elements
 
     def __get_medal_elements(self,medals):
         medal_html = []
         for medal in medals:
-            url = medal.get('imageSmall')
-            sanitized_path = SecurityUtils.sanitize_url_path(url)
-            cache_path = settings.CACHE_PATH / "images" / sanitized_path
-            if cache_path.exists():
-                content = cache_path.read_bytes()
-                url = f'data:image/{cache_path.suffix.lower().replace(".", "")};base64,' + base64.b64encode(content).decode('utf-8')
-
             medal_html.append(
                 {
                     'component':'VCol',
                     'props':{
-                        'cols': 3,
+                        'cols': 6,
                         'md': 3,
-                        'style':"border:1px;"
                     },
                     'content':[
                         {
-                          'component':'VTable',
-                          'props': {
-                            'hover': True,
-                            'fixed-header': True,
-                          },
-                          'content':[
-                              {
-                                  'component': 'thead',
-                                  'content': [
-                                      {
-                                          'component': 'tr',
-                                          'content': [
-                                              {
-                                                  'component': 'th',
-                                                  'props': {
-                                                      'class': 'text-center',
-                                                      'colspan': 2
-                                                  },
-                                                  'content': [
-                                                      {
-                                                          'component': 'H1',
-                                                          'props': {
-                                                              'class': 'mr-2 min-w-0 text-lg font-bold'
-                                                          },
-                                                          'text': f"《{medal.get('name')}》"
-                                                      }
-                                                  ]
-                                              }
-                                          ]
-                                      }
-                                  ]
-                              },
-                              {
-                                  'component': 'tbody',
-                                  'content':[
-                                      {
-                                          'component': 'tr',
-                                          'content': [
-                                              {
-                                                   'component': 'td',
-                                                   'props': {
-                                                      'class': 'text-right',
-                                                       'rowspan': 2
-                                                   },
-                                                   'content':[
-                                                       {
-                                                           'component': 'VImg',
-                                                           'props': {
-                                                               'src': url,
-                                                               'height': '100',
-                                                               'width': '100',
-                                                           }
-                                                       }
-                                                   ]
-                                              },
-                                              {
-                                                  'component': 'td',
-                                                  'props': {
-                                                      'class': 'text-start'
-                                                  },
-                                                  'text':f"开始时间 : {medal.get('saleBeginTime')}"
-                                              }
-                                          ]
-                                      },
-                                      {
-                                          'component': 'tr',
-                                          'content': [
-                                              {
-                                                  'component': 'td',
-                                                  'props': {
-                                                      'class': 'text-start'
-                                                  },
-                                                  'text':f"結束時間 : {medal.get('saleEndTime')}"
-                                              }
-                                          ]
-                                      },
-                                      {
-                                          'component': 'tr',
-                                          'content': [
-                                              {
-                                                  'component': 'td',
-                                                  'props': {
-                                                      'class': 'text-center',
-                                                      'colspan': 2
-                                                  },
-                                                  'text': f"價格 : {medal.get('price'):,}"
-                                              }
-                                          ]
-                                      }
-                                  ]
-                              }
-                          ]
+                           'component': 'VCard',
+
+                           'props': {
+                               'variant': 'tonal',
+                           },
+                           'content': self._get_element(medal)
                         },
+
                     ]
                 }
             )
+
         return medal_html
+
+    def _get_element(self,medal):
+        url = medal.get('imageSmall')
+        sanitized_path = SecurityUtils.sanitize_url_path(url)
+        cache_path = settings.CACHE_PATH / "images" / sanitized_path
+        if cache_path.exists():
+            content = cache_path.read_bytes()
+            url = f'data:image/{cache_path.suffix.lower().replace(".", "")};base64,' + base64.b64encode(content).decode(
+                'utf-8')
+        return [{
+                   'component': 'VTable',
+                   'props': {
+
+                   },
+                   'content': [
+                       {
+                           'component': 'thead',
+                           'content': [
+                               {
+                                   'component': 'tr',
+                                   'content': [
+                                       {
+                                           'component': 'th',
+                                           'props': {
+                                               'class': 'text-center',
+                                               'colspan': 2
+                                           },
+                                           'content': [
+                                               {
+                                                   'component': 'H1',
+                                                   'props': {
+                                                       'class': 'mr-2 min-w-0 text-lg font-bold'
+                                                   },
+                                                   'text': f"《{medal.get('name')}》"
+                                               }
+                                           ]
+                                       }
+                                   ]
+                               }
+                           ]
+                       },
+                       {
+                           'component': 'tbody',
+                           'content': [
+                               {
+                                   'component': 'tr',
+                                   'content': [
+                                       {
+                                           'component': 'td',
+                                           'props': {
+                                               'class': 'text-right',
+                                               'rowspan': 2
+                                           },
+                                           'content': [
+                                               {
+                                                   'component': 'VImg',
+                                                   'props': {
+                                                       'src': url,
+                                                       'height': '100',
+                                                       'width': '100',
+                                                   }
+                                               }
+                                           ]
+                                       },
+                                       {
+                                           'component': 'td',
+                                           'props': {
+                                               'class': 'text-start'
+                                           },
+                                           'text': f"开始时间 : {medal.get('saleBeginTime','')}"
+                                       }
+                                   ]
+                               },
+                               {
+                                   'component': 'tr',
+                                   'content': [
+                                       {
+                                           'component': 'td',
+                                           'props': {
+                                               'class': 'text-start'
+                                           },
+                                           'text': f"結束時間 : {medal.get('saleEndTime','')}"
+                                       }
+                                   ]
+                               },
+                               {
+                                   'component': 'tr',
+                                   'content': [
+                                       {
+                                           'component': 'td',
+                                           'props': {
+                                               'class': 'text-center',
+                                               'colspan': 2
+                                           },
+                                           'text': f"價格 : {medal.get('price'):,}"
+                                       }
+                                   ]
+                               }
+                           ]
+                       }
+                   ]
+               }]
