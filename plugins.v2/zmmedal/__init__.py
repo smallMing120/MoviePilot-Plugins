@@ -19,7 +19,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.3"
+    plugin_version = "1.0.4"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -362,6 +362,8 @@ class ZmMedal(_PluginBase):
                     mtype=NotificationType.SiteMessage,
                     title="【任务执行完成】",
                     text=f"{text_message}")
+            if unhasMedal:
+                self.save_data('medals',unhasMedal,'zmmedal')
 
         except requests.exceptions.RequestException as e:
             logger.error(f"请求勋章页面时发生异常: {e}")
@@ -389,3 +391,77 @@ class ZmMedal(_PluginBase):
         except Exception as e:
             logger.error(f"生成报告时发生异常: {e}")
             return "🌟 织梦勋章购买提醒 🌟\n生成报告时发生错误，请检查日志以获取更多信息。"
+
+    def get_dashboard(self, key: str, **kwargs) -> Optional[Tuple[Dict[str, Any], Dict[str, Any], List[dict]]]:
+        medals = self.get_data('medals','zmmedal')
+        if not medals:
+            pass
+        else:
+            # 列配置
+            cols = {
+                "cols": 12
+            }
+            # 全局配置
+            attrs = {}
+
+            elements = [
+                {
+                    'component': 'VRow',
+                    'content': self.__get_medal_elements(medals)
+                }
+            ]
+            return cols,attrs,elements
+
+    def __get_medal_elements(self,medals):
+        medal_html = []
+        for medal in medals:
+            medal_html.append(
+                {
+                    'component':'VCol',
+                    'props':{
+                        'class':"text-center",
+                        'cols': 3,
+                        'md': 3,
+                    },
+                    'content':[
+                       {
+                           'component': 'VImg',
+                           'props': {
+                               'src': medal.get('imageSmall'),
+                               'height': '200',
+                               'width': '200',
+                               'class': "rounded ring-gray-500"
+                           }
+                       },
+                        {
+                            'component': 'H1',
+                            'props': {
+                                'class': 'text-left mr-2 min-w-0 text-lg font-bold'
+                            },
+                            'text': f"{medal.get('name')}"
+                        },
+                        {
+                            'component':'H3',
+                            'props': {
+                                'class': 'text-left'
+                            },
+                            'text':f"开始时间：{medal.get('saleBeginTime')}"
+                        },
+                        {
+                            'component': 'H3',
+                            'props': {
+                                'class': 'text-left'
+                            },
+                            'text': f"结束时间：{medal.get('saleEndTime')}"
+                        },
+                        {
+                            'component': 'H3',
+                            'props': {
+                                'class': 'text-left'
+                            },
+                            'text': f"价格: {medal.get('price'):,}"
+                        }
+                    ]
+                }
+            )
+        return medal_html
