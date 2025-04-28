@@ -1,6 +1,11 @@
+import io
+import base64
+import tempfile
+from pathlib import Path
 import requests
 from datetime import datetime
 from typing import Any, List, Dict, Tuple, Optional
+from PIL import Image
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -10,6 +15,9 @@ from app.log import logger
 from app.db.site_oper import SiteOper
 from app.schemas import NotificationType
 from app.utils.http import RequestUtils
+from app.core.config import settings
+from app.core.cache import cache_backend, cached
+from app.utils.security import SecurityUtils
 
 class ZmMedal(_PluginBase):
     # 插件名称
@@ -19,7 +27,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.4"
+    plugin_version = "1.0.5"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -343,6 +351,10 @@ class ZmMedal(_PluginBase):
 
                     if self.is_current_time_in_range(saleBeginTime,saleEndTime):
                         logger.info(f"《{name}》:可购买！")
+
+                        # 缓存收集到的圖片
+                        self.__cache_img(imageSmall)
+
                         unhasMedal.append({
                             'name':name,
                             'imageSmall':imageSmall,
@@ -367,6 +379,52 @@ class ZmMedal(_PluginBase):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"请求勋章页面时发生异常: {e}")
+
+    def __cache_img(self,url):
+        if not settings.GLOBAL_IMAGE_CACHE or not url:
+            return
+        # 生成缓存路径
+        sanitized_path = SecurityUtils.sanitize_url_path(url)
+        cache_path = settings.CACHE_PATH / "images" / sanitized_path
+        # 没有文件类型，则添加后缀，在恶意文件类型和实际需求下的折衷选择
+        if not cache_path.suffix:
+            cache_path = cache_path.with_suffix(".jpg")
+        # 确保缓存路径和文件类型合法
+        if not SecurityUtils.is_safe_path(settings.CACHE_PATH, cache_path, settings.SECURITY_IMAGE_SUFFIXES):
+            logger.debug(f"Invalid cache path or file type for URL: {url}, sanitized path: {sanitized_path}")
+            return
+        # 本地存在缓存图片，则直接跳过
+        if cache_path.exists():
+            logger.debug(f"Cache hit: Image already exists at {cache_path}")
+            return
+
+        # 请求远程图片
+        response = RequestUtils(ua=settings.USER_AGENT).get_res(url=url)
+        if not response:
+            logger.debug(f"Empty response for URL: {url}")
+            return
+        # 验证下载的内容是否为有效图片
+        try:
+            Image.open(io.BytesIO(response.content)).verify()
+        except Exception as e:
+            logger.debug(f"Invalid image format for URL {url}: {e}")
+            return
+
+        if not cache_path:
+            return
+
+        try:
+            if not cache_path.parent.exists():
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with tempfile.NamedTemporaryFile(dir=cache_path.parent, delete=False) as tmp_file:
+                tmp_file.write(response.content)
+                temp_path = Path(tmp_file.name)
+            temp_path.replace(cache_path)
+            logger.debug(f"Successfully cached image at {cache_path} for URL: {url}")
+
+        except Exception as e:
+            logger.debug(f"Failed to write cache file {cache_path} for URL {url}: {e}")
+            return
 
     def is_current_time_in_range(self,start_time,end_time):
         """
@@ -415,52 +473,116 @@ class ZmMedal(_PluginBase):
     def __get_medal_elements(self,medals):
         medal_html = []
         for medal in medals:
+            url = medal.get('imageSmall')
+            sanitized_path = SecurityUtils.sanitize_url_path(url)
+            cache_path = settings.CACHE_PATH / "images" / sanitized_path
+            if cache_path.exists():
+                content = cache_path.read_bytes()
+                url = f'data:image/{cache_path.suffix.lower().replace(".", "")};base64,' + base64.b64encode(content).decode('utf-8')
+
             medal_html.append(
                 {
                     'component':'VCol',
                     'props':{
-                        'class':"text-center",
                         'cols': 3,
                         'md': 3,
+                        'style':"border:1px;"
                     },
                     'content':[
-                       {
-                           'component': 'VImg',
-                           'props': {
-                               'src': medal.get('imageSmall'),
-                               'height': '200',
-                               'width': '200',
-                               'class': "rounded ring-gray-500"
-                           }
-                       },
                         {
-                            'component': 'H1',
-                            'props': {
-                                'class': 'text-left mr-2 min-w-0 text-lg font-bold'
-                            },
-                            'text': f"{medal.get('name')}"
+                          'component':'VTable',
+                          'props': {
+                            'hover': True,
+                            'fixed-header': True,
+                          },
+                          'content':[
+                              {
+                                  'component': 'thead',
+                                  'content': [
+                                      {
+                                          'component': 'tr',
+                                          'content': [
+                                              {
+                                                  'component': 'th',
+                                                  'props': {
+                                                      'class': 'text-center',
+                                                      'colspan': 2
+                                                  },
+                                                  'content': [
+                                                      {
+                                                          'component': 'H1',
+                                                          'props': {
+                                                              'class': 'mr-2 min-w-0 text-lg font-bold'
+                                                          },
+                                                          'text': f"《{medal.get('name')}》"
+                                                      }
+                                                  ]
+                                              }
+                                          ]
+                                      }
+                                  ]
+                              },
+                              {
+                                  'component': 'tbody',
+                                  'content':[
+                                      {
+                                          'component': 'tr',
+                                          'content': [
+                                              {
+                                                   'component': 'td',
+                                                   'props': {
+                                                      'class': 'text-right',
+                                                       'rowspan': 2
+                                                   },
+                                                   'content':[
+                                                       {
+                                                           'component': 'VImg',
+                                                           'props': {
+                                                               'src': url,
+                                                               'height': '100',
+                                                               'width': '100',
+                                                           }
+                                                       }
+                                                   ]
+                                              },
+                                              {
+                                                  'component': 'td',
+                                                  'props': {
+                                                      'class': 'text-start'
+                                                  },
+                                                  'text':f"开始时间 : {medal.get('saleBeginTime')}"
+                                              }
+                                          ]
+                                      },
+                                      {
+                                          'component': 'tr',
+                                          'content': [
+                                              {
+                                                  'component': 'td',
+                                                  'props': {
+                                                      'class': 'text-start'
+                                                  },
+                                                  'text':f"結束時間 : {medal.get('saleEndTime')}"
+                                              }
+                                          ]
+                                      },
+                                      {
+                                          'component': 'tr',
+                                          'content': [
+                                              {
+                                                  'component': 'td',
+                                                  'props': {
+                                                      'class': 'text-center',
+                                                      'colspan': 2
+                                                  },
+                                                  'text': f"價格 : {medal.get('price'):,}"
+                                              }
+                                          ]
+                                      }
+                                  ]
+                              }
+                          ]
                         },
-                        {
-                            'component':'H3',
-                            'props': {
-                                'class': 'text-left'
-                            },
-                            'text':f"开始时间：{medal.get('saleBeginTime')}"
-                        },
-                        {
-                            'component': 'H3',
-                            'props': {
-                                'class': 'text-left'
-                            },
-                            'text': f"结束时间：{medal.get('saleEndTime')}"
-                        },
-                        {
-                            'component': 'H3',
-                            'props': {
-                                'class': 'text-left'
-                            },
-                            'text': f"价格: {medal.get('price'):,}"
-                        }
                     ]
                 }
             )
