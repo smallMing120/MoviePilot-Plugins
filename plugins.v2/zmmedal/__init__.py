@@ -27,7 +27,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.6"
+    plugin_version = "1.0.7"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -45,6 +45,9 @@ class ZmMedal(_PluginBase):
     _cron: Optional[str] = None
     _onlyonce: bool = False
     _notify: bool = False
+    _can_buy_medals:bool = False
+    _has_medals:bool = False
+    _unhas_medals:bool = False
 
     # 定时器
     _scheduler: Optional[BackgroundScheduler] = None
@@ -62,6 +65,9 @@ class ZmMedal(_PluginBase):
             self._cron = config.get("cron")
             self._notify = config.get("notify", False)
             self._onlyonce = config.get("onlyonce", False)
+            self._can_buy_medals = config.get("can_buy_medals", False)
+            self._has_medals = config.get("has_medals", False)
+            self._unhas_medals = config.get("unhas_medals", False)
 
         if self._onlyonce:
             try:
@@ -73,6 +79,9 @@ class ZmMedal(_PluginBase):
                     "cron": self._cron,
                     "enabled": self._enabled,
                     "notify": self._notify,
+                    "can_buy_medals": self._can_buy_medals,
+                    "has_medals": self._has_medals,
+                    "unhas_medals": self._unhas_medals,
                 })
                 # 启动任务
                 self.__start()
@@ -225,6 +234,96 @@ class ZmMedal(_PluginBase):
                                             'style': 'color: #1976D2;',
                                             'class': 'mr-2'
                                         },
+                                        'text': 'mdi-home'
+                                    },
+                                    {
+                                        'component': 'span',
+                                        'text': '仪表版显示'
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VDivider'
+                            },
+                            {
+                                'component': 'VCardText',
+                                'content': [
+                                    {
+                                        'component': 'VRow',
+                                        'content':[
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'md': 4
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'can_buy_medals',
+                                                            'label': '可购买勋章',
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'md': 4
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'has_medals',
+                                                            'label': '已拥有勋章',
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'md': 4
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'unhas_medals',
+                                                            'label': '未拥有勋章',
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        'component': 'VCard',
+                        'props': {
+                            'variant': 'outlined',
+                            'class': 'mt-3'
+                        },
+                        'content': [
+                            {
+                                'component': 'VCardTitle',
+                                'props': {
+                                    'class': 'd-flex align-center'
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VIcon',
+                                        'props': {
+                                            'style': 'color: #1976D2;',
+                                            'class': 'mr-2'
+                                        },
                                         'text': 'mdi-clock-outline'
                                     },
                                     {
@@ -250,11 +349,11 @@ class ZmMedal(_PluginBase):
                                                 },
                                                 'content': [
                                                     {
-                                                        'component': 'VTextField',
+                                                        'component': 'VCronField',
                                                         'props': {
                                                             'model': 'cron',
-                                                            'label': '签到周期',
-                                                            'hint': '5位cron表达式，默认每天9点执行'
+                                                            'label': '執行周期',
+                                                            'placeholder': '5位cron表达式，默认每天9点执行'
                                                         }
                                                     }
                                                 ]
@@ -271,78 +370,82 @@ class ZmMedal(_PluginBase):
             "enabled": False,
             "onlyonce": False,
             "notify": False,
+            "can_buy_medals": False,
+            "has_medals": False,
+            "unhas_medals": False,
             "cron": "0 9 * * *",
         }
 
     def get_page(self) -> List[dict]:
-        medals = self.get_data('medals', 'zmmedal')
-        unhas_medals = self.get_data('unhas_medals', 'zmmedal')
-        has_medals = self.get_data('has_medals', 'zmmedal')
-        medal_html = {
-            'component': 'VRow',
-            'content': [
-                {
-                    'component': 'VCol',
-                    'props': {
-                        'cols': 12,
-                        'md': 12
-                    },
-                    'content': [
-                        {
-                            'component': 'VRow',
-                            'props': {
-                                'cols': 12,
-                            },
-                            'content': [
-                                {
-                                    'component': 'VAlert',
-                                    'props': {
-                                        'type': 'error',
-                                        'variant': 'tonal',
-                                        'text': '无可购买勋章'
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-        if medals:
-            medal_html = {
-                'component': 'VRow',
-                'content': [
-                    {
-                        'component': 'VCol',
-                        'props': {
-                            'cols': 12,
-                            'md': 12
-                        },
-                        'content': [
-                            {
-                                'component': 'VRow',
-                                'props': {
-                                    'cols': 12,
-                                },
-                                'content': [
-                                    {
-                                        'component': 'VAlert',
-                                        'props': {
-                                            'type': 'success',
-                                            'variant': 'tonal',
-                                            'text': '可购买勋章'
-                                        }
-                                    }
-                                ]
-                            },
-                            {
-                                'component': 'VRow',
-                                'content': self.__get_medal_elements(medals)
-                            }
-                        ]
-                    }
-                ]
-            }
+        pass
+        # medals = self.get_data('medals', 'zmmedal')
+        # unhas_medals = self.get_data('unhas_medals', 'zmmedal')
+        # has_medals = self.get_data('has_medals', 'zmmedal')
+        # medal_html = {
+        #     'component': 'VRow',
+        #     'content': [
+        #         {
+        #             'component': 'VCol',
+        #             'props': {
+        #                 'cols': 12,
+        #                 'md': 12
+        #             },
+        #             'content': [
+        #                 {
+        #                     'component': 'VRow',
+        #                     'props': {
+        #                         'cols': 12,
+        #                     },
+        #                     'content': [
+        #                         {
+        #                             'component': 'VAlert',
+        #                             'props': {
+        #                                 'type': 'error',
+        #                                 'variant': 'tonal',
+        #                                 'text': '无可购买勋章'
+        #                             }
+        #                         }
+        #                     ]
+        #                 }
+        #             ]
+        #         }
+        #     ]
+        # }
+        # if medals:
+        #     medal_html = {
+        #         'component': 'VRow',
+        #         'content': [
+        #             {
+        #                 'component': 'VCol',
+        #                 'props': {
+        #                     'cols': 12,
+        #                     'md': 12
+        #                 },
+        #                 'content': [
+        #                     {
+        #                         'component': 'VRow',
+        #                         'props': {
+        #                             'cols': 12,
+        #                         },
+        #                         'content': [
+        #                             {
+        #                                 'component': 'VAlert',
+        #                                 'props': {
+        #                                     'type': 'success',
+        #                                     'variant': 'tonal',
+        #                                     'text': '可购买勋章'
+        #                                 }
+        #                             }
+        #                         ]
+        #                     },
+        #                     {
+        #                         'component': 'VRow',
+        #                         'content': self.__get_medal_elements(medals)
+        #                     }
+        #                 ]
+        #             }
+        #         ]
+        #     }
 
         # has_medal_html = {}
         # if has_medals:
@@ -417,9 +520,9 @@ class ZmMedal(_PluginBase):
         #         ]
         #     }
 
-        return[
-            medal_html, #has_medal_html, unhas_medal_html
-        ]
+        # return[
+        #     medal_html, #has_medal_html, unhas_medal_html
+        # ]
 
     def stop_service(self) -> None:
         try:
@@ -628,7 +731,7 @@ class ZmMedal(_PluginBase):
         medals = self.get_data('medals','zmmedal')
         unhas_medals = self.get_data('unhas_medals','zmmedal')
         has_medals = self.get_data('has_medals','zmmedal')
-        if not medals:
+        if not self._can_buy_medals and not self._has_medals and not self._unhas_medals:
             pass
         else:
             # 列配置
@@ -639,7 +742,7 @@ class ZmMedal(_PluginBase):
             attrs = {}
 
             medal_html = {}
-            if medals:
+            if self._can_buy_medals:
                 medal_html = {
                     'component': 'VRow',
                     'content': [
@@ -668,88 +771,88 @@ class ZmMedal(_PluginBase):
                                 },
                                 {
                                     'component': 'VRow',
-                                    'content': self.__get_medal_elements(medals)
+                                    'content': self.__get_medal_elements(medals) if medals else []
                                 }
                             ]
                         }
                     ]
                 }
 
-            # has_medal_html = {}
-            # if has_medals:
-            #     has_medal_html = {
-            #         'component': 'VRow',
-            #         'content': [
-            #             {
-            #                 'component': 'VCol',
-            #                 'props': {
-            #                     'cols': 12,
-            #                 },
-            #                 'content': [
-            #                     {
-            #                         'component': 'VRow',
-            #                          'props': {
-            #                             'cols': 12,
-            #                          },
-            #                         'content': [
-            #                             {
-            #                                 'component': 'VAlert',
-            #                                 'props': {
-            #                                     'type': 'info',
-            #                                     'variant': 'tonal',
-            #                                     'text': '已拥有勋章'
-            #                                 }
-            #                             }
-            #                         ]
-            #                     },
-            #                     {
-            #                         'component': 'VRow',
-            #                         'content': self.__get_medal_elements(has_medals)
-            #                     }
-            #                 ]
-            #             }
-            #         ]
-            #     }
-            #
-            # unhas_medal_html = {}
-            # if unhas_medals:
-            #     unhas_medal_html = {
-            #         'component': 'VRow',
-            #         'content': [
-            #             {
-            #                 'component': 'VCol',
-            #                 'props': {
-            #                     'cols': 12,
-            #                     'md': 12
-            #                 },
-            #                 'content': [
-            #                     {
-            #                         'component': 'VRow',
-            #                         'props': {
-            #                             'cols': 12,
-            #                         },
-            #                         'content': [
-            #                             {
-            #                                 'component': 'VAlert',
-            #                                 'props': {
-            #                                     'type': 'primary',
-            #                                     'variant': 'tonal',
-            #                                     'text': '未拥有勋章'
-            #                                 }
-            #                             }
-            #                         ]
-            #                     },
-            #                     {
-            #                         'component': 'VRow',
-            #                         'content': self.__get_medal_elements(unhas_medals)
-            #                     }
-            #                 ]
-            #             }
-            #         ]
-            #     }
+            has_medal_html = {}
+            if self._has_medals:
+                has_medal_html = {
+                    'component': 'VRow',
+                    'content': [
+                        {
+                            'component': 'VCol',
+                            'props': {
+                                'cols': 12,
+                            },
+                            'content': [
+                                {
+                                    'component': 'VRow',
+                                     'props': {
+                                        'cols': 12,
+                                     },
+                                    'content': [
+                                        {
+                                            'component': 'VAlert',
+                                            'props': {
+                                                'type': 'info',
+                                                'variant': 'tonal',
+                                                'text': '已拥有勋章'
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    'component': 'VRow',
+                                    'content': self.__get_medal_elements(has_medals) if has_medals else []
+                                }
+                            ]
+                        }
+                    ]
+                }
+
+            unhas_medal_html = {}
+            if self._unhas_medals:
+                unhas_medal_html = {
+                    'component': 'VRow',
+                    'content': [
+                        {
+                            'component': 'VCol',
+                            'props': {
+                                'cols': 12,
+                                'md': 12
+                            },
+                            'content': [
+                                {
+                                    'component': 'VRow',
+                                    'props': {
+                                        'cols': 12,
+                                    },
+                                    'content': [
+                                        {
+                                            'component': 'VAlert',
+                                            'props': {
+                                                'type': 'primary',
+                                                'variant': 'tonal',
+                                                'text': '未拥有勋章'
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    'component': 'VRow',
+                                    'content': self.__get_medal_elements(unhas_medals) if unhas_medals else []
+                                }
+                            ]
+                        }
+                    ]
+                }
 
             elements = [
-                medal_html
+                medal_html,has_medal_html,unhas_medal_html
             ]
             return cols,attrs,elements
 
