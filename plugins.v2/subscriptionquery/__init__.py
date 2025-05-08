@@ -8,7 +8,6 @@ from app.db.systemconfig_oper import SystemConfigOper
 from app.chain.site import SiteChain
 from app.db.site_oper import SiteOper
 from app.helper.sites import SitesHelper
-from app.core.config import settings
 from app.db.models.subscribe import Subscribe
 from app.helper.subscribe import SubscribeHelper
 from app.chain.subscribe import SubscribeChain
@@ -23,7 +22,7 @@ class SubscriptionQuery(_PluginBase):
     # 插件图标
     plugin_icon = "Calibreweb_A.png"
     # 插件版本
-    plugin_version = "1.2.5"
+    plugin_version = "1.2.6"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -116,28 +115,6 @@ class SubscriptionQuery(_PluginBase):
             self._sites = [site_id for site_id in all_sites if site_id in self._sites]
             # 保存配置
             self.__update_config()
-        else:
-            self.update_config(
-                {
-                    "subscribe_id": self._subscribe_id,
-                    'keyword': self._keyword,
-                    'quality': self._quality,
-                    'resolution': self._resolution,
-                    'effect': self._effect,
-                    'sites': self._sites,
-                    'include': self._include,
-                    'exclude': self._exclude,
-                    'custom_words': self._custom_words,
-                    'search': self._search,
-                    'start_episode': self._start_episode,
-                    'best_version': self._best_version,
-                    'search_imdbid': self._search_imdbid,
-                    'media_category': self._media_category,
-                    'filter_groups': self._filter_groups,
-                    'update': self._update,
-                    'apikey':settings.API_TOKEN
-                }
-            )
 
     def __update_config(self):
         if self._search:
@@ -179,7 +156,6 @@ class SubscriptionQuery(_PluginBase):
                     'media_category': '',
                     'filter_groups': [],
                     'update': False,
-                    'apikey': settings.API_TOKEN
                 }
             )
         else:
@@ -202,7 +178,6 @@ class SubscriptionQuery(_PluginBase):
                     'media_category': self._media_category,
                     'filter_groups': self._filter_groups,
                     'update': self._update,
-                    'apikey': settings.API_TOKEN
                 }
             )
 
@@ -232,24 +207,28 @@ class SubscriptionQuery(_PluginBase):
                 "path": '/getSiteList',
                 "endpoint": self.get_site_list,
                 "methods": ["GET"],
+                "auth": "bear",
                 "summary": ""
             },
             {
                 "path": '/getSubscribeList',
                 "endpoint": self.get_subscribe_list,
                 "methods": ["GET"],
+                "auth": "bear",
                 "summary": ""
             },
             {
                 "path": '/getFilterRuleGroupsList',
                 "endpoint": self.get_filter_rule_groups_list,
                 "methods": ["GET"],
+                "auth": "bear",
                 "summary": ""
             },
             {
                 "path": '/getSubscribe',
                 "endpoint": self.get_subscribe,
                 "methods": ["GET"],
+                "auth": "bear",
                 "summary": ""
             },
             {
@@ -1304,7 +1283,6 @@ class SubscriptionQuery(_PluginBase):
         """
         # 从系统配置获取默认订阅站点
         default_sites = self.systemconfig.get(SystemConfigKey.RssSites) or []
-
         # 如果订阅未指定站点信息，直接返回默认站点
         if not subscribe.sites:
             return default_sites
@@ -1318,6 +1296,7 @@ class SubscriptionQuery(_PluginBase):
                 "sites": intersection_sites
             })
         # 如果交集为空，返回默认站点
+
         return intersection_sites if intersection_sites else default_sites
 
     def get_render_mode(self) -> Tuple[str, str]:
