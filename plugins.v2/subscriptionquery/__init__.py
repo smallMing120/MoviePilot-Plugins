@@ -8,12 +8,12 @@ from app.db.systemconfig_oper import SystemConfigOper
 from app.chain.site import SiteChain
 from app.db.site_oper import SiteOper
 from app.helper.sites import SitesHelper
+from app.core.config import settings
 from app.db.models.subscribe import Subscribe
 from app.helper.subscribe import SubscribeHelper
 from app.chain.subscribe import SubscribeChain
 from app.db.subscribe_oper import SubscribeOper
 from app.utils.string import StringUtils
-import json
 
 class SubscriptionQuery(_PluginBase):
     # 插件名称
@@ -23,7 +23,7 @@ class SubscriptionQuery(_PluginBase):
     # 插件图标
     plugin_icon = "Calibreweb_A.png"
     # 插件版本
-    plugin_version = "1.2.4"
+    plugin_version = "1.2.5"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -63,6 +63,7 @@ class SubscriptionQuery(_PluginBase):
     _filter_groups:list = []
     _update:bool = False
 
+
     def init_plugin(self, config: dict = None):
         # 停止现有任务
         self.stop_service()
@@ -78,6 +79,19 @@ class SubscriptionQuery(_PluginBase):
         self.searchchain = SearchChain()
         self.systemconfigoper = SystemConfigOper()
 
+        # 获取所有订阅
+        self._subscribe_option = [
+            {
+                'text': f"{subscribe.name} S{int(subscribe.season):02d}",
+                'value': subscribe.id,
+            }
+            for subscribe in self.subscribeoper.list()
+            if isinstance(subscribe.season, (int, float, str)) and str(subscribe.season).isdigit()
+        ]
+        # 用户自定义规则组
+        if self.systemconfigoper.get('UserFilterRuleGroups'):
+            self._filter_rule_groups = [{"text": group.get('name'), "value": group.get('name')} for group in
+                                         self.systemconfigoper.get('UserFilterRuleGroups')]
         #配置
         if config:
             self._subscribe_id = config.get('subscribe_id')
@@ -100,9 +114,30 @@ class SubscriptionQuery(_PluginBase):
             # 过滤掉已删除的站点
             all_sites = [site.id for site in self.siteoper.list_order_by_pri()]
             self._sites = [site_id for site_id in all_sites if site_id in self._sites]
-
             # 保存配置
             self.__update_config()
+        else:
+            self.update_config(
+                {
+                    "subscribe_id": self._subscribe_id,
+                    'keyword': self._keyword,
+                    'quality': self._quality,
+                    'resolution': self._resolution,
+                    'effect': self._effect,
+                    'sites': self._sites,
+                    'include': self._include,
+                    'exclude': self._exclude,
+                    'custom_words': self._custom_words,
+                    'search': self._search,
+                    'start_episode': self._start_episode,
+                    'best_version': self._best_version,
+                    'search_imdbid': self._search_imdbid,
+                    'media_category': self._media_category,
+                    'filter_groups': self._filter_groups,
+                    'update': self._update,
+                    'apikey':settings.API_TOKEN
+                }
+            )
 
     def __update_config(self):
         if self._search:
@@ -143,7 +178,8 @@ class SubscriptionQuery(_PluginBase):
                     'search_imdbid': False,
                     'media_category': '',
                     'filter_groups': [],
-                    'update': False
+                    'update': False,
+                    'apikey': settings.API_TOKEN
                 }
             )
         else:
@@ -165,7 +201,8 @@ class SubscriptionQuery(_PluginBase):
                     'search_imdbid': self._search_imdbid,
                     'media_category': self._media_category,
                     'filter_groups': self._filter_groups,
-                    'update': self._update
+                    'update': self._update,
+                    'apikey': settings.API_TOKEN
                 }
             )
 
@@ -190,6 +227,102 @@ class SubscriptionQuery(_PluginBase):
             "summary": "API说明"
         }]
         """
+        return [
+            {
+                "path": '/getSiteList',
+                "endpoint": self.get_site_list,
+                "methods": ["GET"],
+                "summary": ""
+            },
+            {
+                "path": '/getSubscribeList',
+                "endpoint": self.get_subscribe_list,
+                "methods": ["GET"],
+                "summary": ""
+            },
+            {
+                "path": '/getFilterRuleGroupsList',
+                "endpoint": self.get_filter_rule_groups_list,
+                "methods": ["GET"],
+                "summary": ""
+            },
+            {
+                "path": '/getSubscribe',
+                "endpoint": self.get_subscribe,
+                "methods": ["GET"],
+                "summary": ""
+            },
+            {
+                "path": '/getHistory',
+                "endpoint": self.get_history,
+                "methods": ["GET"],
+                "auth":"bear",
+                "summary": ""
+            }
+        ]
+
+    def get_subscribe(self,subscribe_id):
+        subscribe:{}=None
+        if(subscribe_id):
+            subscribe = self.subscribeoper.get(subscribe_id)
+        return subscribe
+
+
+    def get_site_list(self):
+        """
+        获取所有站点
+        """
+        return [{"text": site.name, "value": site.id} for site in self.siteoper.list_order_by_pri()]
+
+    def get_history(self):
+        histories = self.get_data('history')
+        subscribe_search = self.get_data('subscribe_search')
+        if not histories:
+            return {
+                "subscribe_search": subscribe_search,
+                "histories": []
+            }
+        # 数据按时间降序排序
+        histories = sorted(histories, key=lambda x: x.get('pubdate'), reverse=True)
+        return {
+            "subscribe_search": subscribe_search,
+            "histories": [{
+                "site_icon" : history.get('site_icon'),
+                "title" : history.get('title'),
+                "site_name" : history.get('site_name'),
+                "description" : history.get('description'),
+                "labels" : history.get('labels'),
+                "seeders" : '↑' + str(history.get('seeders')),
+                "peers" : '↓' + str(history.get('peers')),
+                "date_elapsed" : history.get('date_elapsed'),
+                "size" : StringUtils.str_filesize(history.get("size")),
+                "pubdate" : history.get('pubdate'),
+                "page_url" : history.get('page_url'),
+                "hit_and_run" : history.get('hit_and_run'),
+                "freedate_diff" : history.get('freedate_diff')
+            } for history in histories]
+        }
+
+    def get_subscribe_list(self):
+        """
+        获取所有订阅
+        """
+        return  [
+            {
+                'text': f"{subscribe.name} S{int(subscribe.season):02d}",
+                'value': subscribe.id,
+            }
+            for subscribe in self.subscribeoper.list()
+            if isinstance(subscribe.season, (int, float, str)) and str(subscribe.season).isdigit()
+        ]
+
+    def get_filter_rule_groups_list(self):
+        """
+        获取规则组
+        """
+        if self.systemconfigoper.get('UserFilterRuleGroups'):
+            return [{"text": group.get('name'), "value": group.get('name')} for group in
+                                         self.systemconfigoper.get('UserFilterRuleGroups')]
         return []
 
     def get_service(self) -> List[Dict[str, Any]]:
@@ -1187,3 +1320,10 @@ class SubscriptionQuery(_PluginBase):
         # 如果交集为空，返回默认站点
         return intersection_sites if intersection_sites else default_sites
 
+    def get_render_mode(self) -> Tuple[str, str]:
+        """
+        获取插件渲染模式
+        :return: 1、渲染模式，支持：vue/vuetify，默认vuetify
+        :return: 2、组件路径，默认 dist/assets
+        """
+        return "vue", "dist/assets"
