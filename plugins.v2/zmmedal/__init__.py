@@ -27,7 +27,7 @@ class ZmMedal(_PluginBase):
     # 插件图标
     plugin_icon = "https://raw.githubusercontent.com/smallMing120/MoviePilot-Plugins/main/icons/zm.png"
     # 插件版本
-    plugin_version = "1.0.7"
+    plugin_version = "1.0.8"
     # 插件作者
     plugin_author = "smallMing"
     # 作者主页
@@ -754,25 +754,30 @@ class ZmMedal(_PluginBase):
                             },
                             'content': [
                                 {
-                                    'component': 'VRow',
+                                    'component': 'VCard',
                                     'props': {
                                         'cols': 12,
                                     },
                                     'content': [
                                         {
-                                            'component': 'VAlert',
+                                            'component': 'VCardTitle',
                                             'props': {
-                                                'type': 'success',
                                                 'variant': 'tonal',
-                                                'text': '可购买勋章'
-                                            }
+                                                'style': 'background-color: #f4f5fa;color:#008000',
+                                                'class': 'text-center'
+                                            },
+                                            'text':'可购买勋章'
+                                        },
+                                        {
+                                            'component': 'VRow',
+                                            'props': {
+                                                'style': 'background-color: #f4f5fa;'
+                                            },
+                                            'content': self.__get_medal_elements(medals) if medals else []
                                         }
                                     ]
                                 },
-                                {
-                                    'component': 'VRow',
-                                    'content': self.__get_medal_elements(medals) if medals else []
-                                }
+
                             ]
                         }
                     ]
@@ -790,25 +795,29 @@ class ZmMedal(_PluginBase):
                             },
                             'content': [
                                 {
-                                    'component': 'VRow',
+                                    'component': 'VCard',
                                      'props': {
                                         'cols': 12,
                                      },
                                     'content': [
                                         {
-                                            'component': 'VAlert',
+                                            'component': 'VCardTitle',
                                             'props': {
-                                                'type': 'info',
                                                 'variant': 'tonal',
-                                                'text': '已拥有勋章'
-                                            }
+                                                'style': 'background-color: #f4f5fa;color:#1900d1',
+                                                'class': 'text-center'
+                                            },
+                                            'text':'已拥有勋章'
+                                        },
+                                        {
+                                            'component': 'VRow',
+                                            'props': {
+                                                'style': 'background-color: #f4f5fa;'
+                                            },
+                                            'content': self.__get_medal_elements(has_medals) if has_medals else []
                                         }
                                     ]
                                 },
-                                {
-                                    'component': 'VRow',
-                                    'content': self.__get_medal_elements(has_medals) if has_medals else []
-                                }
                             ]
                         }
                     ]
@@ -827,25 +836,29 @@ class ZmMedal(_PluginBase):
                             },
                             'content': [
                                 {
-                                    'component': 'VRow',
+                                    'component': 'VCard',
                                     'props': {
                                         'cols': 12,
                                     },
                                     'content': [
                                         {
-                                            'component': 'VAlert',
+                                            'component': 'VCardTitle',
                                             'props': {
-                                                'type': 'primary',
                                                 'variant': 'tonal',
-                                                'text': '未拥有勋章'
-                                            }
+                                                'style': 'background-color: #f4f5fa;color:#8b0000',
+                                                'class': 'text-center'
+                                            },
+                                            'text': '未拥有勋章'
+                                        },
+                                        {
+                                            'component': 'VRow',
+                                            'props': {
+                                                'style': 'background-color: #f4f5fa;'
+                                            },
+                                            'content': self.__get_medal_elements(unhas_medals) if unhas_medals else []
                                         }
                                     ]
                                 },
-                                {
-                                    'component': 'VRow',
-                                    'content': self.__get_medal_elements(unhas_medals) if unhas_medals else []
-                                }
                             ]
                         }
                     ]
@@ -860,24 +873,7 @@ class ZmMedal(_PluginBase):
         medal_html = []
         for medal in medals:
             medal_html.append(
-                {
-                    'component':'VCol',
-                    'props':{
-                        'cols': 6,
-                        'md': 3,
-                    },
-                    'content':[
-                        {
-                           'component': 'VCard',
-
-                           'props': {
-                               'variant': 'tonal',
-                           },
-                           'content': self._get_element(medal)
-                        },
-
-                    ]
-                }
+                self._get_element(medal)
             )
 
         return medal_html
@@ -890,96 +886,89 @@ class ZmMedal(_PluginBase):
             content = cache_path.read_bytes()
             url = f'data:image/{cache_path.suffix.lower().replace(".", "")};base64,' + base64.b64encode(content).decode(
                 'utf-8')
-        return [{
-                   'component': 'VTable',
-                   'props': {
-
-                   },
-                   'content': [
-                       {
-                           'component': 'thead',
-                           'content': [
-                               {
-                                   'component': 'tr',
-                                   'content': [
-                                       {
-                                           'component': 'th',
-                                           'props': {
-                                               'class': 'text-center',
-                                               'colspan': 2
-                                           },
-                                           'content': [
-                                               {
-                                                   'component': 'H1',
-                                                   'props': {
-                                                       'class': 'mr-2 min-w-0 text-lg font-bold'
-                                                   },
-                                                   'text': f"《{medal.get('name')}》"
-                                               }
-                                           ]
-                                       }
-                                   ]
-                               }
-                           ]
-                       },
-                       {
-                           'component': 'tbody',
-                           'content': [
-                               {
-                                   'component': 'tr',
-                                   'content': [
-                                       {
-                                           'component': 'td',
-                                           'props': {
-                                               'class': 'text-right',
-                                               'rowspan': 2
-                                           },
-                                           'content': [
-                                               {
-                                                   'component': 'VImg',
-                                                   'props': {
-                                                       'src': url,
-                                                       'height': '100',
-                                                       'width': '100',
-                                                   }
-                                               }
-                                           ]
-                                       },
-                                       {
-                                           'component': 'td',
-                                           'props': {
-                                               'class': 'text-start'
-                                           },
-                                           'text': f"开始时间 : {medal.get('saleBeginTime','')}"
-                                       }
-                                   ]
-                               },
-                               {
-                                   'component': 'tr',
-                                   'content': [
-                                       {
-                                           'component': 'td',
-                                           'props': {
-                                               'class': 'text-start'
-                                           },
-                                           'text': f"結束時間 : {medal.get('saleEndTime','')}"
-                                       }
-                                   ]
-                               },
-                               {
-                                   'component': 'tr',
-                                   'content': [
-                                       {
-                                           'component': 'td',
-                                           'props': {
-                                               'class': 'text-center',
-                                               'colspan': 2
-                                           },
-                                           'text': f"價格 : {medal.get('price'):,}"
-                                       }
-                                   ]
-                               }
-                           ]
-                       }
-                   ]
-               }]
+        return {
+                'component': 'VCol',
+                'props': {'cols': 12, 'sm': 6, 'md': 4, 'lg': 3, 'class': 'mb-3 d-flex justify-center'},
+                'content': [
+                    {
+                        'component': 'VCard',
+                        'props': {
+                            'variant': 'flat',
+                            'class': 'mx-auto',
+                            'style': ' border: 1px dashed #feb147 ;border-radius: 8px;'
+                        },
+                        'content': [
+                            {
+                                'component': 'VCardItem',
+                                'props': {'style':"padding: 8px 16px;"},
+                                'content':[
+                                    {
+                                        'component': 'VCardTitle',
+                                        'props': {
+                                            'class': 'text-center font-weight-bold',
+                                            'style': 'margin-top:0; padding-top:0px; margin-bottom:2px;'
+                                        },
+                                        'content': [
+                                            {
+                                                'component': 'VAvatar',
+                                                'props': {
+                                                    'size': '140'
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VImg',
+                                                        'props': {
+                                                            'src': url,
+                                                            'alt': medal.get('name', ''),
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                ]
+                            },
+                            {
+                                'component': 'VCardItem',
+                                'props': {
+                                    'class':'d-flex justify-center',
+                                    'style': "padding: 0px 4px;"
+                                },
+                                'content': [
+                                    {
+                                        'component': 'div',
+                                        'content':[
+                                            {
+                                                'component':'H1',
+                                                'text': f"{medal.get('name', '')}"
+                                            }
+                                        ]
+                                    },
+                                ]
+                            },
+                            {
+                                'component': 'VCardItem',
+                                'props': {'style': "padding: 4px 8px;"},
+                                'content':[
+                                    {
+                                        'component': 'div',
+                                        'props':{'class':'text-caption'},
+                                        'text': f"开始时间：{medal.get('saleBeginTime','')}"
+                                    },
+                                    {
+                                        'component': 'div',
+                                        'props': {'class': 'text-caption'},
+                                        'text': f"结束时间：{medal.get('saleEndTime', '')}"
+                                    },
+                                    {
+                                        'component': 'div',
+                                        'props': {'class': 'text-body-2 font-weight-bold',
+                                                  'style': 'font-size:0.9rem;'},
+                                        'text': f"价格：{medal.get('price'):,}"
+                                    },
+                                ]
+                            },
+                        ]
+                    }
+                ]
+            }
