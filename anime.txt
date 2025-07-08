@@ -1,0 +1,5 @@
+#----自定义词表 Start-----#
+#更衣人偶坠入爱河 第二季轉第一季，設置偏移
+My.Dress-Up.Darling.S02E => {[tmdbid=123249;type=tv]}My Dress-Up Darling S01E && S01E <> .1080p >> EP+12
+
+#----自定义词表 End------#
