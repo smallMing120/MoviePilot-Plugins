@@ -3,4 +3,6 @@
 My.Dress-Up.Darling.S02E => {[tmdbid=123249;type=tv]}My Dress-Up Darling S01E && S01E <> .1080p >> EP+12
 #药屋少女的呢喃 第二季转第一季，设置偏移 ADWeb
 The.Apothecary.Diaries.S02E => The.Apothecary.Diaries.S01E && S01E <> .2025 >> EP+24
+#咒术回战第二季 CHBWeb
+Jujutsu.Kaisen.2nd.Season.S02E => Jujutsu.Kaisen.S01E && S01E <> .1080p >> EP+24
 #----自定义词表 End------#
