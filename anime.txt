@@ -1,4 +1,6 @@
 #----自定义词表 根据TMDB分季集处理 Start-----#
+# Re：从零开始的异世界生活 第三季转第一季，设置偏移 ADWeb
+Re.Zero.kara.Hajimeru.Isekai.Seikatsu.S03E => Re.Zero.kara.Hajimeru.Isekai.Seikatsu.S01E && S01 <> .2024 >> EP+50
 #更衣人偶坠入爱河 第二季轉第一季，設置偏移 MWeb
 My.Dress-Up.Darling.S02E => {[tmdbid=123249;type=tv]}My Dress-Up Darling S01E && S01E <> .1080p >> EP+12
 #药屋少女的呢喃 第二季转第一季，设置偏移 ADWeb
