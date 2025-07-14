@@ -1,4 +1,6 @@
 #----自定义词表 根据TMDB分季集处理 Start-----#
+#香格里拉边境第二季 UBWEB
+\[香格里拉·开拓异境～粪作猎手挑战神作～ 第二季\].Shangri-La.Frontier.2024.S02E(?=.*UBWEB) => {[tmdbid=205050;type=tv]}Shangri-La.Frontier.2024.S01E && S01E <> .1080p >> EP+25
 #青春猪头少年不会梦到圣诞服女郎 ADWeb
 Seishun.Buta.Yarou.wa.Santa.Claus.no.Yume.wo.Minai(?=.*ADWeb) => {[tmdbid=295685;type=tv]}青春猪头少年不会梦到圣诞服女郎
 # Re：从零开始的异世界生活 第三季转第一季，设置偏移 ADE
