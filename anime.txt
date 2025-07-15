@@ -13,7 +13,7 @@ The.Apothecary.Diaries.S02E(?=.*ADWeb) => The.Apothecary.Diaries.S01E && S01E <>
 Jujutsu.Kaisen.2nd.Season.S02E(?=.*CHDWEB) => Jujutsu.Kaisen.S01E && S01E <> .1080p >> EP+24
 #火影忍者 HHWEB
 #001 - 052
-Naruto.S01E0((?:0[1-9]|[1-4][0-9]|5[0-2]))(?=.*HHWEB) => 火影忍者{[tmdbid=46260;type=tv]} S01E
+Naruto.S01E0(?=(?:0[1-9]|[1-4][0-9]|5[0-2]))(?=.*HHWEB) => 火影忍者{[tmdbid=46260;type=tv]} S01E
 #053 - 104
 Naruto.S01E(?=(05[3-9]|0[6-9][0-9]|10[0-4])[.\s])(?=.*HHWEB) => 火影忍者{[tmdbid=46260;type=tv]} S02E
 #105 - 158
